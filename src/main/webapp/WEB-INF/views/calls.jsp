@@ -37,6 +37,7 @@
 				*Call direction: <br />
 				<input type="radio" name="callDirection" value="incoming"> Incoming<br>
 				<input type="radio" name="callDirection" value="outgoing"> Outgoing<br>
+        <input type="radio" name="callDirection" value="all"> All<br>
 				<br /><br />
 	
 				<input type="submit" value="Search" />

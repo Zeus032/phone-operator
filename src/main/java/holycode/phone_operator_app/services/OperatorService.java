@@ -24,7 +24,7 @@ public interface OperatorService {
     /**
      * Insert data from CSV
      */
-	void initializeDB();
+	String initializeDB();
 	
 	
 

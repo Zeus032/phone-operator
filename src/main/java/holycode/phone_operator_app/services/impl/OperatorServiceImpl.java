@@ -1,22 +1,28 @@
 package holycode.phone_operator_app.services.impl;
 
-import holycode.phone_operator_app.requests.CallSearchRequest;
-import holycode.phone_operator_app.responses.CallSearchResponse;
-import holycode.phone_operator_app.services.OperatorService;
-
 import com.opencsv.CSVReader;
+import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.impls.orient.OrientEdge;
 import com.tinkerpop.blueprints.impls.orient.OrientGraph;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
+
+import holycode.phone_operator_app.requests.CallSearchRequest;
+import holycode.phone_operator_app.responses.CallSearchResponse;
+import holycode.phone_operator_app.services.OperatorService;
 
 /**
  * Implementation class for {@link OperatorService}.
@@ -27,6 +33,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class OperatorServiceImpl implements OperatorService {
 
+  OrientGraph graph;
+  
   private static final String SAMPLE_CSV_FILE_PATH = "src/main/resources/cdr_20000_1.csv";
 
 	/*
@@ -38,6 +46,14 @@ public class OperatorServiceImpl implements OperatorService {
 	 */
 	@Override
 	public List<CallSearchResponse> populateCallSearchResponses(CallSearchRequest callSearchRequest) {
+	  for (Vertex v : (Iterable<Vertex>) graph.command(
+	        new OCommandSQL(
+	            "SELECT * FROM Phone "
+	          + "WHERE NUMBER='"+ callSearchRequest.getPhoneNumber()+"'")).execute()) {
+	    System.out.println("- Bought: " + v);
+	    //v.getEdges(arg0, arg1)
+	  }
+	  
 		List<CallSearchResponse> callSearchResponses = new ArrayList<>();
 		callSearchResponses.add(new CallSearchResponse("111", new Date()));
 		callSearchResponses.add(new CallSearchResponse("222", new Date()));
@@ -46,42 +62,90 @@ public class OperatorServiceImpl implements OperatorService {
 	}
 
   @Override
-  public void initializeDB() {
+  public String initializeDB() {
 
-    OrientGraph graph = new OrientGraph("plocal:C:\\apps\\orientdb-2.2.31\\databases\\test2", 
-          "root", "password");
-    
-    graph.createVertexType("Phone");
-    Vertex vPhone;
-    
-    try (
-        Reader reader = Files.newBufferedReader(Paths.get(SAMPLE_CSV_FILE_PATH));
-        CSVReader csvReader = new CSVReader(reader,';');
-        
-    ) {
+    graph = new OrientGraph("plocal:C:/apps/orientdb-2.2.31/databases/test2", "admin", "admin");
+
+    if (graph.getVertexType("Phone") == null) {
+
+      graph.createVertexType("Phone");
+      Vertex vPhoneA;
+      Vertex vPhoneB;
+      OrientEdge eCall;
+      try (Reader reader = Files.newBufferedReader(Paths.get(SAMPLE_CSV_FILE_PATH));
+          CSVReader csvReader = new CSVReader(reader, ';');
+      ) {
         String[] header = csvReader.readNext();
-        // Reading Records One by One in a String array
+ 
         String[] nextRecord;
         while ((nextRecord = csvReader.readNext()) != null) {
-            System.out.println("Name : " + nextRecord[0]);
-            System.out.println("Email : " + nextRecord[1]);
-            System.out.println("==========================");
-            
-            System.out.println(header.length + " " + nextRecord.length);
-            vPhone = graph.addVertex("class:Phone");
-            for (int i=0; i<nextRecord.length-1; i++) {
-              if (header[i].contains(",")) 
-                header[i]=header[i].replaceAll(",", "-");
-              vPhone.setProperty(header[i], nextRecord[i]);
-            }
+          System.out.println("Phone No : " + nextRecord[2]);
+          System.out.println("==========================");
+          
+          Iterable<Vertex> vertices = graph.getVertices("NUMBER", nextRecord[2]);
+          if (!vertices.iterator().hasNext()) {
+            vPhoneA = graph.addVertex("class:Phone");
+          }
+          else {
+            vPhoneA = vertices.iterator().next();
+          }
+          
+          Iterable<Vertex> verticesB = graph.getVertices("NUMBER", nextRecord[7]);
+          if (!verticesB.iterator().hasNext()) {
+            vPhoneB = graph.addVertex("class:Phone");
+          }
+          else {
+            vPhoneB = verticesB.iterator().next();
+          }
+          
 
-            graph.commit();
+          String duration = null;
+          String dateString = null;
+          
+          for (int i = 0; i < nextRecord.length - 1; i++) {
+              switch (header[i]) {
+                case "EVENT_DATE": dateString = nextRecord[i];
+                break;
+                case "A_NUMBER": vPhoneA.setProperty("NUMBER", nextRecord[i]);
+                break;
+                case "A_User": vPhoneA.setProperty("USER", nextRecord[i]);
+                break;
+                case "FILL35": vPhoneA.setProperty("ADDRESS", nextRecord[i]);
+                break;
+              
+                case "B_NUMBER": vPhoneB.setProperty("NUMBER", nextRecord[i]);
+                break;
+                case "B_User": vPhoneB.setProperty("USER", nextRecord[i]);
+                break;
+                case "FILL57": vPhoneB.setProperty("ADDRESS", nextRecord[i]);
+                break;
+                case "DURATION": duration = nextRecord[i];
+                break;
+              }
+            //if (header[i].contains(","))
+            // header[i] = header[i].replaceAll(",", "-");
+          }
+
+          eCall = graph.addEdge("class:calls", vPhoneA, vPhoneB, "call");
+          Date dateFormatted=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateString);  
+          
+          eCall.setProperties("EVENT_DATE", dateFormatted);
+          eCall.setProperties("DURATION", duration);
+
+          graph.commit();
         }
-    } catch (IOException e) {
-      e.printStackTrace();
-      graph.rollback();
+      } catch (IOException e) {
+        e.printStackTrace();
+        graph.rollback();
+      } catch (ParseException e) {
+        e.printStackTrace();
+      }
+    } else {
+      return "There is already imported DATA !";
     }
+
     graph.shutdown();
+    return "Imported into OrientDB!";
   }
 
 }
