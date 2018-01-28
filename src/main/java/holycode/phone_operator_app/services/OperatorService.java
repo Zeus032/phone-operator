@@ -21,4 +21,11 @@ public interface OperatorService {
 	 */
 	List<CallSearchResponse> populateCallSearchResponses(CallSearchRequest callSearchRequest);
 
+    /**
+     * Insert data from CSV
+     */
+	void initializeDB();
+	
+	
+
 }
