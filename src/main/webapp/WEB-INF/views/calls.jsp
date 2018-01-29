@@ -55,13 +55,25 @@
 			<c:if test="${not empty callSearchResponses}">
 		    	<table>
 				  	<tr>
-		    			<th>Phone number</th>
-					    <th>Call date</th> 
+		    			<th>Number 1</th>
+              <th>User 1</th>
+              <th>Address 1</th>
+					    <th>Call date</th>
+              <th>Duration</th>
+              <th>Number 2</th>
+              <th>User 2</th> 
+              <th>Address 2</th> 
 		  			</tr>
 					<c:forEach items="${callSearchResponses}" var="callSearchResponse">
 			  			<tr>
-			    			<td>${callSearchResponse.phoneNumber}</td>
+			    			<td>${callSearchResponse.numberCaller}</td>
+			    			<td>${callSearchResponse.userCaller}</td>
+			    			<td>${callSearchResponse.addressCaller}</td>
 						    <td><fmt:formatDate type="both" value="${callSearchResponse.callDate}" /></td> 
+						    <td>${callSearchResponse.duration}</td>
+						    <td>${callSearchResponse.numberReciever}</td>
+                <td>${callSearchResponse.userReciever}</td>
+                <td>${callSearchResponse.addressReciever}</td>
 			  			</tr>
 					</c:forEach>
 				</table>

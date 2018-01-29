@@ -2,6 +2,7 @@ package holycode.phone_operator_app.services.impl;
 
 import com.opencsv.CSVReader;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.orient.OrientEdge;
@@ -15,6 +16,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -46,25 +48,48 @@ public class OperatorServiceImpl implements OperatorService {
 	 */
 	@Override
 	public List<CallSearchResponse> populateCallSearchResponses(CallSearchRequest callSearchRequest) {
+	  List<CallSearchResponse> callSearchResponses = new ArrayList<>();
+	  graph = getGraph();
+	  Direction direction=null;
+	  switch (callSearchRequest.getCallDirection()) {
+	    case "incoming" : direction = Direction.IN;
+	      break;
+        case "outgoing" : direction = Direction.OUT;
+          break;
+        case "all" : direction = Direction.BOTH;
+          break;
+	  }
 	  for (Vertex v : (Iterable<Vertex>) graph.command(
 	        new OCommandSQL(
 	            "SELECT * FROM Phone "
 	          + "WHERE NUMBER='"+ callSearchRequest.getPhoneNumber()+"'")).execute()) {
-	    System.out.println("- Bought: " + v);
-	    //v.getEdges(arg0, arg1)
+	    String numberCaller = v.getProperty("NUMBER");
+	    String userCaller = v.getProperty("USER");
+	    String addressCaller = v.getProperty("ADDRESS");
+	    Iterable<Edge> edges = v.getEdges(direction, "call");
+	    Iterator<Edge> iterator = edges.iterator();
+	    while (iterator.hasNext()) {
+          Edge edge = (Edge) iterator.next();
+          Date callDate = edge.getProperty("EVENT_DATE");
+          String duration = edge.getProperty("DURATION");
+          
+          Vertex vertex = edge.getVertex(direction == Direction.BOTH ? Direction.OUT : direction);
+          String numberReciever = vertex.getProperty("NUMBER");
+          String userReciever = vertex.getProperty("USER");
+          String addressReciever = vertex.getProperty("ADDRESS");
+          
+          callSearchResponses.add(new CallSearchResponse(numberCaller, numberReciever, duration, callDate, userCaller, addressCaller, userReciever, addressReciever));
+        }
 	  }
 	  
-		List<CallSearchResponse> callSearchResponses = new ArrayList<>();
-		callSearchResponses.add(new CallSearchResponse("111", new Date()));
-		callSearchResponses.add(new CallSearchResponse("222", new Date()));
-		callSearchResponses.add(new CallSearchResponse("333", new Date()));
+		
 		return callSearchResponses;
 	}
 
   @Override
   public String initializeDB() {
 
-    graph = new OrientGraph("plocal:C:/apps/orientdb-2.2.31/databases/test2", "admin", "admin");
+    graph = getGraph();
 
     if (graph.getVertexType("Phone") == null) {
 
@@ -146,6 +171,13 @@ public class OperatorServiceImpl implements OperatorService {
 
     graph.shutdown();
     return "Imported into OrientDB!";
+  }
+  
+  private OrientGraph getGraph () {
+    if (graph == null) {
+      graph = new OrientGraph("plocal:C:/apps/orientdb-2.2.31/databases/test2", "admin", "admin");
+    }
+    return graph;
   }
 
 }

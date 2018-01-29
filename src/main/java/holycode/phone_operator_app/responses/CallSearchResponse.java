@@ -10,47 +10,100 @@ import java.util.Date;
  */
 public class CallSearchResponse {
 
-	private String phoneNumber;
+	private String numberCaller;
+	
+	private String numberReciever;
+	
+	private String duration;
 
 	private Date callDate;
+	
+	private String userCaller;
+	
+	private String addressCaller;
+    
+    private String userReciever;
+    
+    private String addressReciever;
 
-	/**
-	 * @param phoneNumber
-	 * @param callDate
-	 */
-	public CallSearchResponse(String phoneNumber, Date callDate) {
-		this.phoneNumber = phoneNumber;
-		this.callDate = callDate;
-	}
+    public String getNumberCaller() {
+      return numberCaller;
+    }
 
-	/**
-	 * @return the phoneNumber
-	 */
-	public String getPhoneNumber() {
-		return phoneNumber;
-	}
+    public void setNumberCaller(String numberCaller) {
+      this.numberCaller = numberCaller;
+    }
 
-	/**
-	 * @param phoneNumber
-	 *            the phoneNumber to set
-	 */
-	public void setPhoneNumber(String phoneNumber) {
-		this.phoneNumber = phoneNumber;
-	}
+    public String getNumberReciever() {
+      return numberReciever;
+    }
 
-	/**
-	 * @return the callDate
-	 */
-	public Date getCallDate() {
-		return callDate;
-	}
+    public void setNumberReciever(String numberReciever) {
+      this.numberReciever = numberReciever;
+    }
 
-	/**
-	 * @param callDate
-	 *            the callDate to set
-	 */
-	public void setCallDate(Date callDate) {
-		this.callDate = callDate;
-	}
+    public String getDuration() {
+      return duration;
+    }
+
+    public void setDuration(String duration) {
+      this.duration = duration;
+    }
+
+    public Date getCallDate() {
+      return callDate;
+    }
+
+    public void setCallDate(Date callDate) {
+      this.callDate = callDate;
+    }
+
+    public String getUserCaller() {
+      return userCaller;
+    }
+
+    public void setUserCaller(String userCaller) {
+      this.userCaller = userCaller;
+    }
+
+    public String getAddressCaller() {
+      return addressCaller;
+    }
+
+    public void setAddressCaller(String addressCaller) {
+      this.addressCaller = addressCaller;
+    }
+
+    public String getUserReciever() {
+      return userReciever;
+    }
+
+    public void setUserReciever(String userReciever) {
+      this.userReciever = userReciever;
+    }
+
+    public String getAddressReciever() {
+      return addressReciever;
+    }
+
+    public void setAddressReciever(String addressReciever) {
+      this.addressReciever = addressReciever;
+    }
+
+    public CallSearchResponse(String numberCaller, String numberReciever, String duration, Date callDate,
+        String userCaller, String addressCaller, String userReciever, String addressReciever) {
+      super();
+      this.numberCaller = numberCaller;
+      this.numberReciever = numberReciever;
+      this.duration = duration;
+      this.callDate = callDate;
+      this.userCaller = userCaller;
+      this.addressCaller = addressCaller;
+      this.userReciever = userReciever;
+      this.addressReciever = addressReciever;
+    }
+	
+	
+
 
 }
