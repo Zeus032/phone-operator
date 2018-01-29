@@ -2,6 +2,7 @@ package holycode.phone_operator_app.services.impl;
 
 import com.opencsv.CSVReader;
 import com.orientechnologies.orient.core.sql.OCommandSQL;
+import com.orientechnologies.orient.server.distributed.ODistributedServerLog.DIRECTION;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
@@ -20,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import holycode.phone_operator_app.requests.CallSearchRequest;
@@ -34,6 +36,9 @@ import holycode.phone_operator_app.services.OperatorService;
  */
 @Service
 public class OperatorServiceImpl implements OperatorService {
+  
+  @Value("${database.location}")
+  private String databaseLocation;
 
   OrientGraph graph;
   
@@ -73,12 +78,33 @@ public class OperatorServiceImpl implements OperatorService {
           Date callDate = edge.getProperty("EVENT_DATE");
           String duration = edge.getProperty("DURATION");
           
-          Vertex vertex = edge.getVertex(direction == Direction.BOTH ? Direction.OUT : direction);
+          Vertex vertex = edge.getVertex(direction == Direction.IN ? Direction.OUT : Direction.IN);
+          if (vertex.getProperty("NUMBER").equals(v.getProperty("NUMBER"))) {
+            vertex = edge.getVertex(Direction.OUT);
+          }
           String numberReciever = vertex.getProperty("NUMBER");
           String userReciever = vertex.getProperty("USER");
           String addressReciever = vertex.getProperty("ADDRESS");
           
-          callSearchResponses.add(new CallSearchResponse(numberCaller, numberReciever, duration, callDate, userCaller, addressCaller, userReciever, addressReciever));
+          Date dateFrom = null;
+          Date dateTo = null;
+          
+          try {
+            if (!callSearchRequest.getDateFrom().isEmpty())
+              dateFrom=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(callSearchRequest.getDateFrom());
+            if (!callSearchRequest.getDateTo().isEmpty())
+              dateTo=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(callSearchRequest.getDateTo());
+          } catch (ParseException e) {
+            e.printStackTrace();
+          }
+          
+          if ((dateFrom == null && dateTo == null) || 
+              (dateFrom != null && dateTo != null && dateFrom.before(callDate) && dateTo.after(callDate)) ||
+              (dateFrom == null && dateTo != null && dateTo.after(callDate)) ||
+              (dateFrom != null && dateTo == null && dateFrom.before(callDate))) {
+            callSearchResponses.add(new CallSearchResponse(numberCaller, numberReciever, duration, callDate, userCaller, addressCaller, userReciever, addressReciever));
+          }
+          
         }
 	  }
 	  
@@ -147,8 +173,7 @@ public class OperatorServiceImpl implements OperatorService {
                 case "DURATION": duration = nextRecord[i];
                 break;
               }
-            //if (header[i].contains(","))
-            // header[i] = header[i].replaceAll(",", "-");
+              
           }
 
           eCall = graph.addEdge("class:calls", vPhoneA, vPhoneB, "call");
@@ -169,13 +194,13 @@ public class OperatorServiceImpl implements OperatorService {
       return "There is already imported DATA !";
     }
 
-    graph.shutdown();
+    //graph.shutdown();
     return "Imported into OrientDB!";
   }
   
   private OrientGraph getGraph () {
     if (graph == null) {
-      graph = new OrientGraph("plocal:C:/apps/orientdb-2.2.31/databases/test2", "admin", "admin");
+      graph = new OrientGraph("plocal:"+databaseLocation, "admin", "admin");
     }
     return graph;
   }
