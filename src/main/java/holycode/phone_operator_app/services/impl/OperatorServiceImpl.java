@@ -91,9 +91,9 @@ public class OperatorServiceImpl implements OperatorService {
           
           try {
             if (!callSearchRequest.getDateFrom().isEmpty())
-              dateFrom=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(callSearchRequest.getDateFrom());
+              dateFrom=new SimpleDateFormat("dd-MM-yyyy").parse(callSearchRequest.getDateFrom());
             if (!callSearchRequest.getDateTo().isEmpty())
-              dateTo=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(callSearchRequest.getDateTo());
+              dateTo=new SimpleDateFormat("dd-MM-yyyy").parse(callSearchRequest.getDateTo());
           } catch (ParseException e) {
             e.printStackTrace();
           }
