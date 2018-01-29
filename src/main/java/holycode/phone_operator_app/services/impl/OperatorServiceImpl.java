@@ -16,6 +16,8 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -108,7 +110,14 @@ public class OperatorServiceImpl implements OperatorService {
         }
 	  }
 	  
-		
+  	  Collections.sort(callSearchResponses, new Comparator<CallSearchResponse>() {
+  	    public int compare(CallSearchResponse o1, CallSearchResponse o2) {
+  	        if (o1.getCallDate() == null || o2.getCallDate() == null)
+  	          return 0;
+  	        return o1.getCallDate().compareTo(o2.getCallDate());
+  	    }
+  	  });
+  	  
 		return callSearchResponses;
 	}
 
